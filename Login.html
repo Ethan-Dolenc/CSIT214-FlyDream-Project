@@ -1,0 +1,22 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="FlyDream.css">
+        <script type="text/javascript" src="FlyDream.js"></script>
+
+    </head>
+
+    <body onload="displayPopup('login_form'); displayPopup('screen_lock_overlay');">
+        <div class="popup_hidden" id="screen_lock_overlay"></div>
+
+        <form class="popup popup_hidden" id="login_form" method="get" onsubmit="submitLoginForm(event)">
+            <p>Please Login:</p>
+            <p class="error popup_hidden" id="no_username"><i>Please enter a username</i></p>
+            Username:<input type="text" name="username" id="username" placeholder="Username"> <br />
+
+            <p class="error popup_hidden" id="no_password"><i>Please enter a password</i></p>
+            Password:<input type="text" name="password" id="password" placeholder="Password"> <br />
+            <input type="submit" /> 
+        </form>
+        <button onClick="alert('rawr')">aaa</button>
+    </body>
+</html>
