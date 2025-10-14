@@ -1,12 +1,28 @@
 <html>
     <head>
-        <link rel="stylesheet" href="FlyDream.css">
-        <script type="text/javascript" src="FlyDream.js"></script>
-
+        <link rel="stylesheet" href="main.css">
+        <script type="text/javascript" src="main.js"></script>
+        
     </head>
 
     <body>
-        <button onClick="displayPopup('meal_form');">Food</button>
+
+    <nav>
+        <a class="nav_button" href="#">Home</a>
+        <a class="nav_button" href="book flight.html">Flights</a>
+        <a class="nav_button" href="#">Booking</a>
+        <button class="nav_button" onClick="createLoginForm(); displayPopup('screen_lock_overlay');"; style="color: white; margin-right: 15px; text-decoration: none;">Login</button>
+    </nav>
+
+    <h1>Welcome to FlyDream</h1>
+
+
+    <div class="popup_hidden" id="screen_lock_overlay"></div>
+
+    
+    
+
+    <button onClick="displayPopup('meal_form'); displayPopup('screen_lock_overlay');">Food</button>
         <!--Meal Selections-->
         <form class="popup_hidden popup" id="meal_form" method="get" onsubmit="submitMealForm(event)">
             <p>Please select desired meals and accompanying drinks:</p>
@@ -53,7 +69,5 @@
             <p id="price_display">Total Price: $0.00</p>
             <input type="submit" /> 
         </form>
-        <div class="popup_hidden popup" id="reciept">
-        </div>
     </body>
 </html>
