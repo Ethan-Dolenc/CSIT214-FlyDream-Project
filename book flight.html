@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Book Flight</title>
+  <link rel="stylesheet" href="main.css">
+  <style>
+    body {margin:0;font-family:sans-serif}
+    nav {background:#333;height:50px;display:flex;align-items:center}
+    .nav_button {color:#fff;text-decoration:none;padding:0 16px;height:100%;display:flex;align-items:center}
+    .nav_button:hover {background:#525252}
+    .wrap {max-width:960px;margin:20px auto;padding:0 16px}
+    .card {border:1px solid #e5e5e5;border-radius:10px;padding:16px;margin-bottom:12px}
+    .row {display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
+    .input,select,button {width:100%;padding:10px;border:1px solid #e5e5e5;border-radius:8px}
+    .btn {cursor:pointer;background:#fff}
+    .btn:hover {background:#f9f9f9}
+    .btn.primary {background:#000;color:#fff}
+    .muted {color:#666;font-size:14px}
+    .badge {display:inline-block;border:1px solid #e5e5e5;border-radius:999px;padding:2px 8px;font-size:12px;margin-left:8px}
+    table {width:100%;border-collapse:collapse;margin-top:10px}
+    th,td {border-bottom:1px solid #eee;padding:8px;text-align:left}
+    .note {border:1px solid #e5e5e5;border-radius:8px;padding:8px;margin:10px 0;background:#fafafa}
+    .kbd {font-family:monospace;background:#f2f2f2;border:1px solid #e5e5e5;padding:2px 6px;border-radius:6px}
+    .grid {display:grid;grid-template-columns:repeat(7,36px);gap:6px}
+    .seat {width:36px;height:36px;border:1px solid #ddd;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+    .seat.taken {background:#eee;color:#999;cursor:not-allowed}
+    .seat.selected {outline:3px solid #000}
+    .label {font-size:12px;color:#666}
+    .meal-toggle-header {display:flex;justify-content:space-between;align-items:center;cursor:pointer;padding:8px 0}
+    .meal-toggle-icon {transition:transform .3s;font-weight:bold}
+    .meal-toggle-icon.open {transform:rotate(180deg)}
+    .breakfast-options,.lunch-options,.dinner-options {display:none;margin-left:20px;margin-bottom:10px}
+    .breakfast-options.open,.lunch-options.open,.dinner-options.open {display:block}
+    @media(max-width:720px){.row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body onload="init()">
+
+<div id="overlay" class="popup_hidden"></div>
+
+<nav>
+  <a href="book flight.html" class="nav_button">Flights</a>
+  <a href="manage.html" class="nav_button">Manage</a>
+  <button id="loginBtn" class="nav_button" style="color:white;margin-right:15px;text-decoration:none" onclick="showLogin()">Login / Sign Up</button>
+</nav>
+
+<div class="wrap">
+  <div id="msg"></div>
+
+  <div class="card">
+    <h2 style="margin:0 0 8px 0">Search Flights <span id="countBadge" class="badge">0 shown</span></h2>
+    <p class="muted" style="margin:0 0 10px 0">Pick route and date. If no exact match, similar flights show automatically.</p>
+
+    <form id="search" class="row">
+      <div style="grid-column:span 4">
+        <label>Origin
+          <select name="origin" class="input" required>
+            <option value="">Any</option>
+          </select>
+        </label>
+      </div>
+      <div style="grid-column:span 4">
+        <label>Destination
+          <select name="destination" class="input" required>
+            <option value="">Any</option>
+          </select>
+        </label>
+      </div>
+      <div style="grid-column:span 3">
+        <label>Date
+          <select name="date" class="input">
+            <option value="">Any</option>
+          </select>
+        </label>
+      </div>
+      <div style="grid-column:span 1;display:flex;align-items:end;gap:6px">
+        <button type="submit" class="btn primary">Go</button>
+      </div>
+    </form>
+
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+      <button id="allBtn" class="btn" style="width:auto">Show all</button>
+      <button id="todayBtn" class="btn" style="width:auto">Today only</button>
+    </div>
+
+    <div id="note" class="note" style="display:none"></div>
+    <div id="results"></div>
+  </div>
+
+  <div id="step2" class="card" style="margin-top:12px;display:none">
+    <div class="row">
+      <div style="grid-column:span 6">
+        <h3 style="margin:0 0 8px 0">Select a Seat</h3>
+        <div id="flightInfo" class="muted"></div>
+        <div id="seatGrid" style="margin:10px 0"></div>
+        <div class="muted">Selected seat: <span id="seatShow" class="kbd">-</span></div>
+      </div>
+      <div style="grid-column:span 6">
+        <h3 style="margin:0 0 8px 0">In-Flight Meals</h3>
+        <p class="muted" style="margin:10px 0">Select your preferred meals and drinks:</p>
+
+        <div style="margin-bottom:15px">
+          <div class="meal-toggle-header" onclick="toggleMeal('breakfast')">
+            <label style="display:block;margin-bottom:8px;font-weight:bold;cursor:pointer">Breakfast</label>
+            <span id="breakfastIcon" class="meal-toggle-icon">▼</span>
+          </div>
+          <div id="breakfastOpts" class="breakfast-options">
+            <label style="display:block"><input type="radio" name="bf_food" value="none" checked> None</label>
+            <label style="display:block"><input type="radio" name="bf_food" value="pancakes"> Pancakes ($13)</label>
+            <label style="display:block"><input type="radio" name="bf_food" value="waffles"> Waffles ($15)</label>
+            <div style="height:1px;background:#eee;margin:8px 0"></div>
+            <label style="display:block"><input type="radio" name="bf_drink" value="none" checked> No Drink</label>
+            <label style="display:block"><input type="radio" name="bf_drink" value="apple_juice"> Apple Juice ($5)</label>
+            <label style="display:block"><input type="radio" name="bf_drink" value="orange_juice"> Orange Juice ($5)</label>
+          </div>
+        </div>
+
+        <div style="margin-bottom:15px">
+          <div class="meal-toggle-header" onclick="toggleMeal('lunch')">
+            <label style="display:block;margin-bottom:8px;font-weight:bold;cursor:pointer">Lunch</label>
+            <span id="lunchIcon" class="meal-toggle-icon">▼</span>
+          </div>
+          <div id="lunchOpts" class="lunch-options">
+            <label style="display:block"><input type="radio" name="l_food" value="none" checked> None</label>
+            <label style="display:block"><input type="radio" name="l_food" value="hamburger"> Hamburger ($10)</label>
+            <label style="display:block"><input type="radio" name="l_food" value="salad"> Salad ($8)</label>
+            <div style="height:1px;background:#eee;margin:8px 0"></div>
+            <label style="display:block"><input type="radio" name="l_drink" value="none" checked> No Drink</label>
+            <label style="display:block"><input type="radio" name="l_drink" value="coke"> Coke ($5)</label>
+            <label style="display:block"><input type="radio" name="l_drink" value="fanta"> Fanta ($5)</label>
+          </div>
+        </div>
+
+        <div style="margin-bottom:15px">
+          <div class="meal-toggle-header" onclick="toggleMeal('dinner')">
+            <label style="display:block;margin-bottom:8px;font-weight:bold;cursor:pointer">Dinner</label>
+            <span id="dinnerIcon" class="meal-toggle-icon">▼</span>
+          </div>
+          <div id="dinnerOpts" class="dinner-options">
+            <label style="display:block"><input type="radio" name="d_food" value="none" checked> None</label>
+            <label style="display:block"><input type="radio" name="d_food" value="steak"> Steak ($20)</label>
+            <label style="display:block"><input type="radio" name="d_food" value="pasta"> Pasta ($15)</label>
+            <div style="height:1px;background:#eee;margin:8px 0"></div>
+            <label style="display:block"><input type="radio" name="d_drink" value="none" checked> No Drink</label>
+            <label style="display:block"><input type="radio" name="d_drink" value="wine"> Wine ($12)</label>
+            <label style="display:block"><input type="radio" name="d_drink" value="pink_lemonade"> Pink Lemonade ($5)</label>
+          </div>
+        </div>
+
+        <div class="muted" style="margin:10px 0">Total: <span id="mealCost" class="kbd">$0</span></div>
+      </div>
+    </div>
+
+    <div style="height:1px;background:#eee;margin:14px 0"></div>
+
+    <h3 style="margin:0 0 8px 0">Passenger</h3>
+    <form id="book" class="row">
+      <div style="grid-column:span 4"><input class="input" name="first" placeholder="First name" required></div>
+      <div style="grid-column:span 4"><input class="input" name="last" placeholder="Last name" required></div>
+      <div style="grid-column:span 4"><input class="input" name="email" type="email" placeholder="you@example.com" required></div>
+      <div style="grid-column:span 12;display:flex;gap:8px;justify-content:flex-end">
+        <button type="reset" class="btn">Reset</button>
+        <button type="submit" class="btn primary">Confirm Booking</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+let flights = [], flight = null, seat = null;
+
+function init() {
+  updateLoginBtn();
+  fetch('available_flights.json')
+    .then(r => r.json())
+    .then(data => {
+      flights = data;
+      fillSelect('origin', [...new Set(flights.map(f=>f.origin))].sort());
+      fillSelect('destination', [...new Set(flights.map(f=>f.destination))].sort());
+      fillSelect('date', [...new Set(flights.map(f=>f.departure_date))].sort());
+      showResults(flights.slice(0,10), 'Showing top results');
+    });
+
+  document.getElementById('allBtn').onclick = () => {
+    document.getElementById('note').style.display = 'none';
+    document.getElementById('search').reset();
+    showResults(flights, 'Showing all flights');
+  };
+
+  document.getElementById('todayBtn').onclick = () => {
+    const today = new Date().toISOString().slice(0,10);
+    const list = flights.filter(f => f.departure_date === today);
+    let resList;
+    let msg;
+    if (list.length > 0) {
+      resList = list;
+      msg = 'Showing flights for today';
+    } else {
+      resList = flights.slice(0,10);
+      msg = 'No flights today - showing top results';
+    }
+    showResults(resList, msg);
+  };
+
+  document.getElementById('search').onsubmit = e => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    const o = f.get('origin'), d = f.get('destination'), dt = f.get('date');
+    let res = flights;
+    if (o) res = res.filter(x => x.origin === o);
+    if (d) res = res.filter(x => x.destination === d);
+    if (dt) res = res.filter(x => x.departure_date === dt);
+    let msg = 'Exact matches';
+    if (res.length === 0) {
+      res = flights.filter(f => {
+        if (o && d) {
+          return f.origin === o && f.destination === d;
+        } else if (o) {
+          return f.origin === o;
+        } else {
+          return true;
+        }
+      });
+      if (o && d) {
+        msg = 'No exact date match - showing same route on other dates';
+      } else if (o) {
+        msg = 'No route match - showing all from selected origin';
+      } else {
+        msg = 'No match - showing most available flights';
+      }
+      if (res.length === 0) {
+        res = flights.slice(0,20);
+      }
+    }
+    showResults(res, msg);
+  };
+
+  document.getElementById('book').onsubmit = e => {
+    e.preventDefault();
+    if (!localStorage.current_user) {
+      alert('Please sign in to book a flight.');
+      return;
+    }
+    if (!flight || !seat) {
+      alert('Select a seat');
+      return;
+    }
+    const fd = new FormData(e.target);
+    const pnr = 'FD' + Math.random().toString(36).slice(2,7).toUpperCase();
+    const meals = {
+      breakfast: {food: getRadio('bf_food'), drink: getRadio('bf_drink')},
+      lunch: {food: getRadio('l_food'), drink: getRadio('l_drink')},
+      dinner: {food: getRadio('d_food'), drink: getRadio('d_drink')},
+      total: calcMealTotal()
+    };
+    const booking = {
+      pnr, flight_number: flight.flight_number, origin: flight.origin, destination: flight.destination,
+      departure_date: flight.departure_date, departure_time: flight.departure_time,
+      arrival_time: flight.arrival_time, price: flight.price,
+      passenger: {firstName: fd.get('first'), lastName: fd.get('last'), email: fd.get('email')},
+      seat, meals
+    };
+    let list = JSON.parse(localStorage.getItem('fda.bookings.v1') || '[]');
+    list.push(booking);
+    localStorage.setItem('fda.bookings.v1', JSON.stringify(list));
+
+    const u = localStorage.current_user;
+    let dict = JSON.parse(localStorage.user_dict || '{}');
+    dict[u].booked_flights.push(booking);
+    localStorage.user_dict = JSON.stringify(dict);
+
+    document.getElementById('msg').innerHTML = `<div class="note">Booked. PNR <span class="kbd">${pnr}</span>. Use Manage to view or change seat.</div>`;
+    e.target.reset();
+    document.getElementById('seatShow').textContent = '-';
+    drawSeats();
+    window.scrollTo({top:0,behavior:'smooth'});
+  };
+}
+
+function fillSelect(id, arr) {
+  const s = document.querySelector(`select[name="${id}"]`);
+  s.innerHTML = '<option value="">Any</option>';
+  arr.forEach(v => {
+    const o = document.createElement('option');
+    o.value = o.textContent = v;
+    s.appendChild(o);
+  });
+}
+
+function showResults(list, label) {
+  const r = document.getElementById('results');
+  r.innerHTML = '';
+  document.getElementById('countBadge').textContent = list.length + ' shown';
+  if (label) {
+    const n = document.getElementById('note');
+    n.style.display = 'block';
+    n.textContent = label;
+  }
+  const tbl = document.createElement('table');
+  tbl.innerHTML = `<thead><tr><th>Flight</th><th>Route</th><th>Date</th><th>Time</th><th>Price</th><th></th></tr></thead><tbody></tbody>`;
+  list.sort(function(a,b) {
+    if (a.departure_date+a.departure_time < b.departure_date+b.departure_time) {
+      return -1;
+    } else {
+      return 1;
+    }
+  }).forEach(f => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><strong>${f.flight_number}</strong></td>
+      <td>${f.origin} -> ${f.destination}</td>
+      <td>${f.departure_date}</td>
+      <td>${f.departure_time} - ${f.arrival_time}</td>
+      <td>$${f.price}</td>
+      <td><button class="btn primary" onclick="pickFlight('${f.flight_number}','${f.departure_date}')">Select</button></td>`;
+    tbl.querySelector('tbody').appendChild(tr);
+  });
+  r.appendChild(tbl);
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function pickFlight(num, date) {
+  flight = flights.find(f => f.flight_number === num && f.departure_date === date);
+  document.getElementById('step2').style.display = 'block';
+  document.getElementById('flightInfo').textContent = `${flight.flight_number} • ${flight.origin} -> ${flight.destination} • ${flight.departure_date} • ${flight.departure_time}`;
+  drawSeats();
+}
+
+function drawSeats() {
+  seat = null;
+  const g = document.getElementById('seatGrid');
+  g.innerHTML = '';
+  const rows = 18, cols = 'ABCDEF'.split('');
+  const taken = new Set();
+  // simple random taken
+  for (let r=1;r<=rows;r++) for (let c of cols) if (Math.random()<0.2) taken.add(r+c);
+  // booked seats
+  const bs = JSON.parse(localStorage.getItem('fda.bookings.v1')||'[]');
+  bs.forEach(b => { if (b.flight_number===flight.flight_number && b.departure_date===flight.departure_date) taken.add(b.seat); });
+
+  const grid = document.createElement('div');
+  grid.className = 'grid';
+  grid.appendChild(document.createElement('span'));
+  cols.forEach(c => {
+    const h = document.createElement('div');
+    h.className = 'label';
+    h.textContent = c;
+    grid.appendChild(h);
+  });
+  for (let r=1;r<=rows;r++) {
+    const rl = document.createElement('div');
+    rl.className = 'label';
+    rl.textContent = r;
+    grid.appendChild(rl);
+    cols.forEach(c => {
+      const code = r+c;
+      const cell = document.createElement('div');
+      cell.className = 'seat';
+      cell.textContent = c;
+      cell.title = code;
+      if (taken.has(code)) cell.classList.add('taken');
+      cell.onclick = () => {
+        if (cell.classList.contains('taken')) return;
+        grid.querySelectorAll('.selected').forEach(s=>s.classList.remove('selected'));
+        cell.classList.add('selected');
+        seat = code;
+        document.getElementById('seatShow').textContent = seat;
+      };
+      grid.appendChild(cell);
+    });
+  }
+  g.appendChild(grid);
+}
+
+function toggleMeal(m) {
+  const opts = document.getElementById(m+'Opts');
+  const icon = document.getElementById(m+'Icon');
+  opts.classList.toggle('open');
+  icon.classList.toggle('open');
+}
+
+function getRadio(name) {
+  const sel = document.querySelector(`input[name="${name}"]:checked`);
+  if (sel) {
+    return sel.value;
+  } else {
+    return 'none';
+  }
+}
+
+function calcMealTotal() {
+  const prices = {
+    breakfast: {food:{none:0,pancakes:13,waffles:15}, drink:{none:0,apple_juice:5,orange_juice:5}},
+    lunch: {food:{none:0,hamburger:10,salad:8}, drink:{none:0,coke:5,fanta:5}},
+    dinner: {food:{none:0,steak:20,pasta:15}, drink:{none:0,wine:12,pink_lemonade:5}}
+  };
+  let total = 0;
+  ['breakfast','lunch','dinner'].forEach(m => {
+    total += prices[m].food[getRadio(m[0]+'_food')] || 0;
+    total += prices[m].drink[getRadio(m[0]+'_drink')] || 0;
+  });
+  document.getElementById('mealCost').textContent = '$'+total;
+  return total;
+}
+
+// attach meal changes
+['bf','l','d'].forEach(p => {
+  document.querySelectorAll(`input[name="${p}_food"], input[name="${p}_drink"]`).forEach(i => i.onchange = calcMealTotal);
+});
+
+function showLogin() {
+  createLoginForm();
+  document.getElementById('overlay').classList.remove('popup_hidden');
+}
+
+function updateLoginBtn() {
+  const btn = document.getElementById('loginBtn');
+  const u = localStorage.current_user;
+  if (u) {
+    const dict = JSON.parse(localStorage.user_dict || '{}');
+    if (dict[u].username) {
+      btn.textContent = dict[u].username;
+    } else {
+      btn.textContent = 'User';
+    }
+    btn.onclick = () => {
+      if (confirm('Log out?')) {
+        localStorage.removeItem('current_user');
+        localStorage.logged_in = 'false';
+        updateLoginBtn();
+      }
+    };
+  } else {
+    btn.textContent = 'Login / Sign Up';
+    btn.onclick = showLogin;
+  }
+}
+
+window.addEventListener('userLoggedIn', updateLoginBtn);
+</script>
+<script src="main.js"></script>
+</body>
+</html>
