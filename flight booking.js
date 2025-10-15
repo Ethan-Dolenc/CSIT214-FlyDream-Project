@@ -1,8 +1,8 @@
 [
   {
-    """name": "Alex C",
+    "name": "Alex C",
     "age": 2,
-    "city": "Houston"""
+    "city": "Houston"
   },
   {
     "name": "John G",

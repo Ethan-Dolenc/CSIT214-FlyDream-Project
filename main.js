@@ -72,6 +72,57 @@ function getPrice(radio_group) {
     }
 }
 
+
+function createMealForm() {
+    var meal_form = document.createElement("form");
+    meal_form.id = "meal_form";
+    meal_form.classList.add("popup");
+    meal_form.onsubmit = submitMealForm;
+    meal_form.innerHTML =
+    `
+        <p>Please select desired meals and accompanying drinks:</p>
+        <input type="checkbox" onClick="displayPopup('breakfast_options');" name="meal_selection" id="breakfast">Breakfast
+        <br />
+        <div class="popup_hidden selected_meal" id="breakfast_options">
+            <input type="radio" name="breakfast_food" onClick="getPrice(name);" value="none" checked="true" />None <br />
+            <input type="radio" name="breakfast_food" onClick="getPrice(name);" value="pancakes" />Pancakes <br />
+            <input type="radio" name="breakfast_food" onClick="getPrice(name);" value="waffles" />Waffles <br />
+            ---------- <br />
+            <input type="radio" name="breakfast_drink" onClick="getPrice(name);" value="none" checked="true" />None <br />
+            <input type="radio" name="breakfast_drink" onClick="getPrice(name);" value="apple_juice" />Apple Juice <br />
+            <input type="radio" name="breakfast_drink" onClick="getPrice(name);" value="orange_juice" />Orange Juice
+        </div>
+        
+        <input type="checkbox" onClick="displayPopup('lunch_options');" name="meal_selection" id="lunch">Lunch
+        <br />
+        <div class="popup_hidden selected_meal" id="lunch_options">
+            <input type="radio" name="lunch_food" onClick="getPrice(name);" value="none" checked="true" />None <br />
+            <input type="radio" name="lunch_food" onClick="getPrice(name);" value="hamburger" />Hamburger <br />
+            <input type="radio" name="lunch_food" onClick="getPrice(name);" value="salad" />Salad <br />
+            ---------- <br />
+            <input type="radio" name="lunch_drink" onClick="getPrice(name);" value="none" checked="true" />None <br />
+            <input type="radio" name="lunch_drink" onClick="getPrice(name);" value="coke" />Coke <br />
+            <input type="radio" name="lunch_drink" onClick="getPrice(name);" value="fanta" />Fanta
+        </div>
+        
+        <input type="checkbox" onClick="displayPopup('dinner_options');" name="meal_selection" id="dinner">Dinner
+        <div class="popup_hidden selected_meal" id="dinner_options">
+            <input type="radio" name="dinner_food" onClick="getPrice(name);" value="none" checked="true" />None <br />
+            <input type="radio" name="dinner_food" onClick="getPrice(name);" value="steak" />Steak <br />
+            <input type="radio" name="dinner_food" onClick="getPrice(name);" value="pasta" />Pasta <br />
+            ---------- <br />
+            <input type="radio" name="dinner_drink" onClick="getPrice(name);" value="none" checked="true" />None <br />
+            <input type="radio" name="dinner_drink" onClick="getPrice(name);" value="wine" />Wine <br />
+            <input type="radio" name="dinner_drink" onClick="getPrice(name);" value="pink_lemonade" />Pink Lemonade
+        </div>
+        <br />
+        <br />
+        <p id="price_display">Total Price: $0.00</p>
+        <input type="submit" /> 
+        `
+    document.body.appendChild(meal_form);
+}
+
 //Meal Confirmation
 function submitMealForm(event) {
     event.preventDefault();
@@ -93,9 +144,9 @@ function submitMealForm(event) {
     }
 
     document.getElementById('price_display').innerHTML = "Total Price: $0.00";
-    resetForm("meal_form");
-    displayPopup("meal_form");
     createReciept(reciept_items);
+    displayed_popups = displayed_popups.filter(item => !["breakfast_options", "lunch_options", "dinner_option"].includes(item));
+    meal_form.remove()
 }
 
 
@@ -138,7 +189,6 @@ var password = "";
 function createLoginForm() {
     var login_form = document.createElement("form");
     login_form.classList.add("popup");
-    login_form.classList.add("popup_hidden");
     login_form.id = "login_form";
     login_form.onsubmit = submitLoginForm;
     login_form.innerHTML =
@@ -152,7 +202,6 @@ function createLoginForm() {
     <input type="submit" /> 
     `;
     document.body.appendChild(login_form);
-    displayPopup("login_form");
 }
 
 //Login Form Submission
@@ -163,7 +212,6 @@ function submitLoginForm(event) {
     
     username = form_elements.username.value;
     password = form_elements.password.value;
-    console.log(username)
     
 
     if (username == "" && !user_error) {
@@ -175,11 +223,51 @@ function submitLoginForm(event) {
         pass_error = true;
     }
 
-    if (!username == "" && !password == "") {
-        displayPopup("login_form");
+    if (username != "" && password != "") {  // Also fixed: was !username == ""
+        var user_dict = JSON.parse(localStorage.getItem('user_dict'))
+
+        if (!user_dict[username+password]) {
+            user = {
+                'username': username,
+                'password': password,
+                'booked_flights': []
+            };
+            user_dict[username+password] = user;
+            localStorage.setItem('user_dict', JSON.stringify(user_dict));
+        }
+        
+        localStorage.setItem('logged_in', 'true');
+        localStorage.setItem('current_user', username+password);
+        console.log(localStorage.getItem('current_user'))
+        login_form.remove()
         displayPopup("screen_lock_overlay");
-        if (pass_error) {displayPopup("no_password");}
-        if (user_error) {displayPopup("no_username");}
-        login_form.reset();
+        account_display = document.getElementById("account_display");
+        account_display.innerHTML = username;
+    }
+}
+
+function onLoad() {
+    // Initialize logged_in
+    if (!localStorage.getItem('logged_in')) {
+        localStorage.setItem('logged_in', 'false');
+    }
+    var logged_in = localStorage.getItem('logged_in') === 'true';
+    
+    // Initialize user_dict
+    if (!localStorage.getItem('user_dict')) {
+        localStorage.setItem('user_dict', JSON.stringify({}));
+    }
+    var user_dict = JSON.parse(localStorage.getItem('user_dict'));
+    
+    // Initialize current_user
+    if (!localStorage.getItem('current_user')) {
+        localStorage.setItem('current_user', '');
+    }
+    var current_user = localStorage.getItem('current_user');
+    
+    // Update display if logged in
+    if (logged_in && current_user && user_dict[current_user]) {
+        var account_display = document.getElementById("account_display");
+        account_display.innerHTML = user_dict[current_user]['username'];
     }
 }

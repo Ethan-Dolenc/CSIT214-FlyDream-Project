@@ -71,3 +71,8 @@ nav {
     cursor: pointer;
     background-color: #525252;
 }
+
+#account_display {
+    color:white;
+    right:0;
+}

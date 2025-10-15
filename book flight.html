@@ -27,13 +27,16 @@
     .label{font-size:12px;color:#666}
     @media(max-width:720px){.row{grid-template-columns:1fr}}
   </style>
+  <link rel="stylesheet" href="main.css">
 </head>
-<body>
+<body onLoad="onLoad();">
+  <div class="popup_hidden" id="screen_lock_overlay"></div>
   <nav>
     <a href="main.html" class="nav_button">Home</a>
     <a href="book flight.html" class="nav_button">Flights</a>
     <a href="manage.html" class="nav_button">Manage</a>
-    <a href="inflight.html" class="nav_button">In-flight</a>
+    <button class="nav_button" onClick="createLoginForm(); displayPopup('screen_lock_overlay');"; style="color: white; margin-right: 15px; text-decoration: none;">Login / Sign Up</button>
+    <p id="account_display"></p>
   </nav>
 
   <div class="wrap">
@@ -245,7 +248,17 @@
         passenger:{firstName:data.firstName,lastName:data.lastName,email:data.email},
         seat:selectedSeat
       };
+
       const list=getBookings(); list.push(booking); saveBookings(list);
+
+      
+      var current_user = localStorage.getItem('current_user');
+      user_dict = JSON.parse(localStorage.getItem('user_dict'))
+      console.log(user_dict);
+      user_dict[current_user]['booked_flights'].push(booking)
+      localStorage.setItem('user_dict', JSON.stringify(user_dict))
+      console.log(localStorage.getItem('user_dict'))
+
       document.getElementById('confirm').innerHTML=
         `<div class="note">Booked. PNR <span class="kbd">${pnr}</span>. Use Manage to view or change seat.</div>`;
       window.scrollTo({top:0,behavior:'smooth'});
@@ -254,5 +267,6 @@
       document.getElementById('seatVal').textContent='-';
     });
   </script>
+  <script type="text/javascript" src="main.js"></script>
 </body>
 </html>

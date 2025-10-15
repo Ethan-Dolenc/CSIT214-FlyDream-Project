@@ -5,14 +5,14 @@
         
     </head>
 
-    <body>
+    <body onLoad="onLoad();">
 
     <nav>
-        <a class="nav_button" href="#">Home</a>
-        <a class="nav_button" href="book flight.html">Flights</a>
-        <a class="nav_button" href="#">Booking</a>
-        <a href="manage.html" class="nav_button">Manage</a>
-        <button class="nav_button" onClick="createLoginForm(); displayPopup('screen_lock_overlay');"; style="color: white; margin-right: 15px; text-decoration: none;">Login</button>
+    <a href="main.html" class="nav_button">Home</a>
+    <a href="book flight.html" class="nav_button">Flights</a>
+    <a href="manage.html" class="nav_button">Manage</a>
+    <button class="nav_button" onClick="createLoginForm(); displayPopup('screen_lock_overlay');"; style="color: white; margin-right: 15px; text-decoration: none;">Login / Sign Up</button>
+    <p id="account_display"></p>
     </nav>
 
     <h1>Welcome to FlyDream</h1>
@@ -25,50 +25,6 @@
 
     <button onClick="displayPopup('meal_form'); displayPopup('screen_lock_overlay');">Food</button>
         <!--Meal Selections-->
-        <form class="popup_hidden popup" id="meal_form" method="get" onsubmit="submitMealForm(event)">
-            <p>Please select desired meals and accompanying drinks:</p>
-            <!--Breakfast-->
-            <input type="checkbox" onClick="displayPopup('breakfast_options');" name="meal_selection" id="breakfast">Breakfast
-            <br />
-            <div class="popup_hidden selected_meal" id="breakfast_options">
-                <input type="radio" name="breakfast_food" onClick="getPrice(name);" value="none" checked="true" />None <br />
-                <input type="radio" name="breakfast_food" onClick="getPrice(name);" value="pancakes" />Pancakes <br />
-                <input type="radio" name="breakfast_food" onClick="getPrice(name);" value="waffles" />Waffles <br />
-                ---------- <br />
-                <input type="radio" name="breakfast_drink" onClick="getPrice(name);" value="none" checked="true" />None <br />
-                <input type="radio" name="breakfast_drink" onClick="getPrice(name);" value="apple_juice" />Apple Juice <br />
-                <input type="radio" name="breakfast_drink" onClick="getPrice(name);" value="orange_juice" />Orange Juice
-            </div>
-            
-            <!--Lunch-->
-            <input type="checkbox" onClick="displayPopup('lunch_options');" name="meal_selection" id="lunch">Lunch
-            <br />
-            <div class="popup_hidden selected_meal" id="lunch_options">
-                <input type="radio" name="lunch_food" onClick="getPrice(name);" value="none" checked="true" />None <br />
-                <input type="radio" name="lunch_food" onClick="getPrice(name);" value="hamburger" />Hamburger <br />
-                <input type="radio" name="lunch_food" onClick="getPrice(name);" value="salad" />Salad <br />
-                ---------- <br />
-                <input type="radio" name="lunch_drink" onClick="getPrice(name);" value="none" checked="true" />None <br />
-                <input type="radio" name="lunch_drink" onClick="getPrice(name);" value="coke" />Coke <br />
-                <input type="radio" name="lunch_drink" onClick="getPrice(name);" value="fanta" />Fanta
-            </div>
-            
-            
-            <!--Dinner-->
-            <input type="checkbox" onClick="displayPopup('dinner_options');" name="meal_selection" id="dinner">Dinner
-            <div class="popup_hidden selected_meal" id="dinner_options">
-                <input type="radio" name="dinner_food" onClick="getPrice(name);" value="none" checked="true" />None <br />
-                <input type="radio" name="dinner_food" onClick="getPrice(name);" value="steak" />Steak <br />
-                <input type="radio" name="dinner_food" onClick="getPrice(name);" value="pasta" />Pasta <br />
-                ---------- <br />
-                <input type="radio" name="dinner_drink" onClick="getPrice(name);" value="none" checked="true" />None <br />
-                <input type="radio" name="dinner_drink" onClick="getPrice(name);" value="wine" />Wine <br />
-                <input type="radio" name="dinner_drink" onClick="getPrice(name);" value="pink_lemonade" />Pink Lemonade
-            </div>
-            <br />
-            <br />
-            <p id="price_display">Total Price: $0.00</p>
-            <input type="submit" /> 
-        </form>
+        
     </body>
 </html>
