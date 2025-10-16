@@ -10,9 +10,10 @@
     .nav_button{color:#fff;text-decoration:none;background:#333;border:0;display:flex;align-items:center;justify-content:center;height:100%;padding:0 16px}
     .nav_button:hover{background:#525252}
     .wrap{max-width:900px;margin:20px auto;padding:0 16px}
-    .card{border:1px solid #e5e5e5;border-radius:10px;padding:16px}
+    .card{border:1px solid #e5e5e5;border-radius:10px;padding:16px;margin-bottom:12px}
     .row{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
     .input,select,button{width:100%;padding:10px;border:1px solid #e5e5e5;border-radius:8px;background:#fff}
+    .input:hover,select:hover,button:hover{background:#f9f9f9;}
     .btn{cursor:pointer}.btn.primary{background:#000;color:#fff}
     .muted{color:#666;font-size:14px}
     .kbd{font-family:ui-monospace,Menlo,monospace;background:#f2f2f2;border:1px solid #e5e5e5;padding:2px 6px;border-radius:6px}
@@ -21,131 +22,501 @@
     .grid{display:grid;grid-template-columns:repeat(7,36px);gap:6px;align-items:center}
     .seat{width:36px;height:36px;border:1px solid #ddd;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fff}
     .seat.taken{background:#eee;color:#999;cursor:not-allowed}
+    .seat:hover{background:#f9f9f9;}
+    .seat.taken:hover{background:#eee;}
     .seat.selected{outline:3px solid #000}
     .label{font-size:12px;color:#666}
+    .toggle-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none;padding:10px;border:1px solid #e5e5e5;border-radius:8px;}
+    .toggle-header:hover{background:#f9f9f9;}
+    .toggle-icon{transition:transform 0.3s;font-weight:bold}
+    .toggle-icon.open{transform:rotate(180deg)}
+    .seat-change-content{display:none;margin-top:10px}
+    .seat-change-content.open{display:block}
+    .meal-change-content{display:none;margin-top:10px}
+    .meal-change-content.open{display:block}
+    .breakfast-options, .lunch-options, .dinner-options {
+      display: none;
+    }
+    .breakfast-options:hover, .lunch-options:hover, .dinner-options:hover {
+      display: none;
+    }
+    .breakfast-options.open, .lunch-options.open, .dinner-options.open {
+      display: block;
+    }
+    .meal-toggle-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+      padding: 8px 0;
+    }
+    .meal-toggle-icon {
+      transition: transform 0.3s;
+      font-weight: bold;
+    }
+    .meal-toggle-icon.open {
+      transform: rotate(180deg);
+    }
     @media(max-width:720px){.row{grid-template-columns:1fr}}
   </style>
+  <link rel="stylesheet" href="main.css">
 </head>
 <body>
   <nav>
-    <a href="main.html" class="nav_button">Home</a>
     <a href="book flight.html" class="nav_button">Flights</a>
     <a href="manage.html" class="nav_button">Manage</a>
+    <button id="loginBtn" class="nav_button" style="color:white;margin-right:15px;text-decoration:none" onclick="showLogin()">Login / Sign Up</button>
   </nav>
 
   <div class="wrap">
     <div class="card">
-      <h2 style="margin:0 0 8px 0">Find Booking</h2>
-      <form id="lookupForm" class="row">
-        <div style="grid-column:span 4"><input class="input" name="pnr" placeholder="PNR e.g. FDABC1" required></div>
-        <div style="grid-column:span 6"><input class="input" type="email" name="email" placeholder="you@example.com" required></div>
-        <div style="grid-column:span 2;display:flex;align-items:end"><button class="btn primary" type="submit">Find</button></div>
-      </form>
+      <h2 style="margin:0">My Bookings</h2>
     </div>
-
-    <div id="out" style="margin-top:12px"></div>
+    <div id="out"></div>
   </div>
 
   <script>
-    const STORAGE='fda.bookings.v1';
-    const getBookings=()=>JSON.parse(localStorage.getItem(STORAGE)||'[]');
-    const saveBookings=(x)=>localStorage.setItem(STORAGE,JSON.stringify(x));
+    // Get current user's bookings
+    function getUserBookings() {
+      const current_user = localStorage.getItem('current_user');
+      if (!current_user) {
+        return [];
+      }
+      
+      const user_dict = JSON.parse(localStorage.getItem('user_dict') || '{}');
+      if (!user_dict[current_user]) {
+        return [];
+      }
+      
+      return user_dict[current_user].booked_flights || [];
+    }
 
-    document.getElementById('lookupForm').addEventListener('submit',e=>{
-      e.preventDefault();
-      const q=Object.fromEntries(new FormData(e.currentTarget).entries());
-      const b=getBookings().find(x=>x.pnr.trim().toUpperCase()===q.pnr.trim().toUpperCase()&&x.passenger.email.trim().toLowerCase()===q.email.trim().toLowerCase());
-      const out=document.getElementById('out');
-      if(!b){out.innerHTML='<div class="card">No booking found</div>';return;}
-      renderBooking(b);
-    });
-
-    function renderBooking(b){
-      const out=document.getElementById('out');
-      out.innerHTML=`
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
-            <div>
-              <h3 style="margin:0 0 4px 0">PNR ${b.pnr}</h3>
-              <div class="muted">${b.origin} -> ${b.destination} • ${b.departure_date} • Seat ${b.seat}</div>
-            </div>
-            <div style="display:flex;gap:8px">
-              <button id="cancel" class="btn">Cancel</button>
-              <button id="download" class="btn">Download</button>
-              <a class="btn primary" href="inflight.html?pnr=${b.pnr}">In-flight</a>
-            </div>
-          </div>
-          <div style="height:1px;background:#eee;margin:12px 0"></div>
-          <table>
-            <tr><th>Passenger</th><td>${b.passenger.firstName} ${b.passenger.lastName}</td></tr>
-            <tr><th>Email</th><td>${b.passenger.email}</td></tr>
-            <tr><th>Flight</th><td>${b.flight_number}</td></tr>
-            <tr><th>Date</th><td>${b.departure_date}</td></tr>
-            <tr><th>Seat</th><td><span id="seatNow">${b.seat}</span></td></tr>
-            <tr><th>Price</th><td>$${b.price}</td></tr>
-          </table>
-          <div style="height:1px;background:#eee;margin:12px 0"></div>
-          <h3 style="margin:0 0 8px 0">Change Seat</h3>
-          <div id="seatWrap" style="margin:10px 0"></div>
-          <div class="muted">New seat: <span class="kbd" id="seatNew">-</span></div>
-          <div style="margin-top:10px"><button id="saveSeat" class="btn primary">Save Seat</button></div>
-        </div>`;
-      document.getElementById('cancel').onclick=()=>{
-        if(!confirm('Cancel this booking?'))return;
-        const list=getBookings().filter(x=>x.pnr!==b.pnr); saveBookings(list);
-        out.innerHTML='<div class="card">Booking cancelled</div>';
-      };
-      document.getElementById('download').onclick=()=>{
-        const blob=new Blob([`FlyDreamAir Itinerary
-PNR: ${b.pnr}
-Name: ${b.passenger.firstName} ${b.passenger.lastName}
-Email: ${b.passenger.email}
-Flight: ${b.flight_number} (${b.origin} -> ${b.destination})
-Date: ${b.departure_date}
-Seat: ${b.seat}
-Price: $${b.price}`],{type:'text/plain'});
-        const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`FlyDreamAir_${b.pnr}.txt`;a.click();
-        setTimeout(()=>URL.revokeObjectURL(a.href),1000);
-      };
-
-      let selectedSeat=null;
-      renderSeatMap(b);
-      document.getElementById('saveSeat').onclick=()=>{
-        if(!selectedSeat){alert('Select a seat');return;}
-        const list=getBookings(); const idx=list.findIndex(x=>x.pnr===b.pnr);
-        if(idx>-1){list[idx].seat=selectedSeat; saveBookings(list);}
-        document.getElementById('seatNow').textContent=selectedSeat;
-        document.getElementById('seatNew').textContent='-';
-        renderSeatMap(list[idx]);
-      };
-
-      function seededRandom(seed){let h=0;for(let i=0;i<seed.length;i++){h=(h<<5)-h+seed.charCodeAt(i);h|=0}return function(){h^=h<<13;h^=h>>>17;h^=h<<5;return((h>>>0)%1000)/1000}}
-      function renderSeatMap(bk){
-        const rng=seededRandom(bk.flight_number+bk.departure_date);
-        const rows=18, cols=['A','B','C','D','E','F'], taken=new Set();
-        for(let r=1;r<=rows;r++){for(const c of cols){if(rng()<0.2)taken.add(`${r}${c}`)}}
-        for(const x of getBookings()){if(x.flight_number===bk.flight_number&&x.departure_date===bk.departure_date)taken.add(x.seat)}
-        taken.delete(bk.seat);
-        const grid=document.createElement('div');grid.className='grid';grid.innerHTML='';
-        grid.appendChild(document.createElement('span'));
-        for(const c of cols){const d=document.createElement('div');d.className='label';d.textContent=c;grid.appendChild(d)}
-        for(let r=1;r<=rows;r++){
-          const rl=document.createElement('div');rl.className='label';rl.textContent=r;grid.appendChild(rl);
-          for(const c of cols){
-            const code=`${r}${c}`, cell=document.createElement('div');cell.className='seat';cell.textContent=c;cell.title=code;
-            if(taken.has(code))cell.classList.add('taken');
-            if(code===bk.seat)cell.classList.add('selected');
-            cell.onclick=()=>{
-              if(cell.classList.contains('taken'))return;
-              grid.querySelectorAll('.seat.selected').forEach(s=>s.classList.remove('selected'));
-              cell.classList.add('selected'); selectedSeat=code; document.getElementById('seatNew').textContent=selectedSeat;
-            };
-            grid.appendChild(cell);
-          }
-        }
-        const hold=document.getElementById('seatWrap'); hold.innerHTML=''; hold.appendChild(grid);
+    // Save booking changes back to user
+    function saveUserBookings(bookings) {
+      const current_user = localStorage.getItem('current_user');
+      const user_dict = JSON.parse(localStorage.getItem('user_dict') || '{}');
+      
+      if (user_dict[current_user]) {
+        user_dict[current_user].booked_flights = bookings;
+        localStorage.setItem('user_dict', JSON.stringify(user_dict));
       }
     }
+
+    // Load all bookings on page load
+    window.onload = function() {
+      const bookings = getUserBookings();
+      const out = document.getElementById('out');
+      updateLoginBtn();
+      
+      if (bookings.length === 0) {
+        out.innerHTML = '<div class="card">No bookings found. <a href="book flight.html">Book a flight</a></div>';
+        return;
+      }
+      
+      // Display all bookings
+      bookings.forEach((booking, index) => {
+        renderBooking(booking, index);
+      });
+    };
+
+    function renderBooking(b, index) {
+      const out = document.getElementById('out');
+      const cardDiv = document.createElement('div');
+      cardDiv.className = 'card';
+      cardDiv.id = `booking_${index}`;
+      
+      // Compute meal total and total price for display
+      const mealTotal = b.meals ? b.meals.total : 0;
+      const totalPrice = b.price + mealTotal;
+      
+      cardDiv.innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
+          <div>
+            <h3 style="margin:0 0 4px 0">PNR ${b.pnr}</h3>
+            <div class="muted">${b.origin} -> ${b.destination} • ${b.departure_date} • Seat ${b.seat}</div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-cancel" data-index="${index}">Cancel</button>
+            <button class="btn btn-download" data-index="${index}">Download</button>
+            <button class="btn btn-inflight" data-index="${index}">In-Flight Meals</button>
+          </div>
+        </div>
+        <div style="height:1px;background:#eee;margin:12px 0"></div>
+        <table>
+          <tr><th>Passenger</th><td>${b.passenger.firstName} ${b.passenger.lastName}</td></tr>
+          <tr><th>Email</th><td>${b.passenger.email}</td></tr>
+          <tr><th>Flight</th><td>${b.flight_number}</td></tr>
+          <tr><th>Date</th><td>${b.departure_date}</td></tr>
+          <tr><th>Seat</th><td><span class="seat-now" data-index="${index}">${b.seat}</span></td></tr>
+          <tr><th>Meal Total</th><td>$${mealTotal}</td></tr>
+          <tr><th>Total Price</th><td>$${totalPrice}</td></tr>
+        </table>
+
+        <div style="height:1px;background:#eee;margin:12px 0"></div>
+        <div class="toggle-header toggle-seat" data-index="${index}">
+          <h3 style="margin:0">Change Seat</h3>
+          <span class="toggle-icon toggle-seat-icon" data-index="${index}">▼</span>
+        </div>
+        <div class="seat-change-content" data-index="${index}">
+          <div class="seat-wrap" data-index="${index}" style="margin:10px 0"></div>
+          <div class="muted">New seat: <span class="kbd seat-new" data-index="${index}">-</span></div>
+          <div style="margin-top:10px"><button class="btn primary btn-save-seat" data-index="${index}">Save Seat</button></div>
+        </div>
+        
+        <div style="height:1px;background:#eee;margin:12px 0"></div>
+        <div class="toggle-header toggle-meal" data-index="${index}">
+          <h3 style="margin:0">In-Flight Meals</h3>
+          <span class="toggle-icon toggle-meal-icon" data-index="${index}">▼</span>
+        </div>
+        <div class="meal-change-content" data-index="${index}">
+          <p class="muted" style="margin:10px 0">Select your preferred meals and drinks:</p>
+          <div style="margin-bottom:15px">
+            <div class="meal-toggle-header breakfast-toggle" data-index="${index}">
+              <label style="display:block;margin-bottom:8px;font-weight:bold;cursor:pointer;">Breakfast</label>
+              <span class="meal-toggle-icon breakfast-toggle-icon" data-index="${index}">▼</span>
+            </div>
+            <div class="breakfast-options" data-index="${index}" style="margin-left:20px;margin-bottom:10px">
+              <label style="display:block"><input type="radio" name="breakfast_food_${index}" value="none" ${b.meals && b.meals.breakfast.food === 'none' ? 'checked' : ''}> None</label>
+              <label style="display:block"><input type="radio" name="breakfast_food_${index}" value="pancakes" ${b.meals && b.meals.breakfast.food === 'pancakes' ? 'checked' : ''}> Pancakes ($13)</label>
+              <label style="display:block"><input type="radio" name="breakfast_food_${index}" value="waffles" ${b.meals && b.meals.breakfast.food === 'waffles' ? 'checked' : ''}> Waffles ($15)</label>
+              <div style="height:1px;background:#eee;margin:8px 0"></div>
+              <label style="display:block"><input type="radio" name="breakfast_drink_${index}" value="none" ${b.meals && b.meals.breakfast.drink === 'none' ? 'checked' : ''}> No Drink</label>
+              <label style="display:block"><input type="radio" name="breakfast_drink_${index}" value="apple_juice" ${b.meals && b.meals.breakfast.drink === 'apple_juice' ? 'checked' : ''}> Apple Juice ($5)</label>
+              <label style="display:block"><input type="radio" name="breakfast_drink_${index}" value="orange_juice" ${b.meals && b.meals.breakfast.drink === 'orange_juice' ? 'checked' : ''}> Orange Juice ($5)</label>
+            </div>
+          </div>
+          <div style="margin-bottom:15px">
+            <div class="meal-toggle-header lunch-toggle" data-index="${index}">
+              <label style="display:block;margin-bottom:8px;font-weight:bold;cursor:pointer;">Lunch</label>
+              <span class="meal-toggle-icon lunch-toggle-icon" data-index="${index}">▼</span>
+            </div>
+            <div class="lunch-options" data-index="${index}" style="margin-left:20px;margin-bottom:10px">
+              <label style="display:block"><input type="radio" name="lunch_food_${index}" value="none" ${b.meals && b.meals.lunch.food === 'none' ? 'checked' : ''}> None</label>
+              <label style="display:block"><input type="radio" name="lunch_food_${index}" value="hamburger" ${b.meals && b.meals.lunch.food === 'hamburger' ? 'checked' : ''}> Hamburger ($10)</label>
+              <label style="display:block"><input type="radio" name="lunch_food_${index}" value="salad" ${b.meals && b.meals.lunch.food === 'salad' ? 'checked' : ''}> Salad ($8)</label>
+              <div style="height:1px;background:#eee;margin:8px 0"></div>
+              <label style="display:block"><input type="radio" name="lunch_drink_${index}" value="none" ${b.meals && b.meals.lunch.drink === 'none' ? 'checked' : ''}> No Drink</label>
+              <label style="display:block"><input type="radio" name="lunch_drink_${index}" value="coke" ${b.meals && b.meals.lunch.drink === 'coke' ? 'checked' : ''}> Coke ($5)</label>
+              <label style="display:block"><input type="radio" name="lunch_drink_${index}" value="fanta" ${b.meals && b.meals.lunch.drink === 'fanta' ? 'checked' : ''}> Fanta ($5)</label>
+            </div>
+          </div>
+          <div style="margin-bottom:15px">
+            <div class="meal-toggle-header dinner-toggle" data-index="${index}">
+              <label style="display:block;margin-bottom:8px;font-weight:bold;cursor:pointer;">Dinner</label>
+              <span class="meal-toggle-icon dinner-toggle-icon" data-index="${index}">▼</span>
+            </div>
+            <div class="dinner-options" data-index="${index}" style="margin-left:20px;margin-bottom:10px">
+              <label style="display:block"><input type="radio" name="dinner_food_${index}" value="none" ${b.meals && b.meals.dinner.food === 'none' ? 'checked' : ''}> None</label>
+              <label style="display:block"><input type="radio" name="dinner_food_${index}" value="steak" ${b.meals && b.meals.dinner.food === 'steak' ? 'checked' : ''}> Steak ($20)</label>
+              <label style="display:block"><input type="radio" name="dinner_food_${index}" value="pasta" ${b.meals && b.meals.dinner.food === 'pasta' ? 'checked' : ''}> Pasta ($15)</label>
+              <div style="height:1px;background:#eee;margin:8px 0"></div>
+              <label style="display:block"><input type="radio" name="dinner_drink_${index}" value="none" ${b.meals && b.meals.dinner.drink === 'none' ? 'checked' : ''}> No Drink</label>
+              <label style="display:block"><input type="radio" name="dinner_drink_${index}" value="wine" ${b.meals && b.meals.dinner.drink === 'wine' ? 'checked' : ''}> Wine ($12)</label>
+              <label style="display:block"><input type="radio" name="dinner_drink_${index}" value="pink_lemonade" ${b.meals && b.meals.dinner.drink === 'pink_lemonade' ? 'checked' : ''}> Pink Lemonade ($5)</label>
+            </div>
+          </div>
+          <div class="muted" style="margin:10px 0">Total: <span class="kbd meal-total" data-index="${index}">${mealTotal ? '$' + mealTotal : '$0'}</span></div>
+          <div style="margin-top:10px"><button class="btn primary btn-save-meal" data-index="${index}">Confirm Order</button></div>
+        </div>
+      `;
+      
+      out.appendChild(cardDiv);
+      
+      // Attach toggle functionality for seat
+      document.querySelector(`.toggle-header.toggle-seat[data-index="${index}"]`).onclick = () => {
+        const content = document.querySelector(`.seat-change-content[data-index="${index}"]`);
+        const icon = document.querySelector(`.toggle-seat-icon[data-index="${index}"]`);
+        
+        content.classList.toggle('open');
+        icon.classList.toggle('open');
+        
+        // Render seat map on first open
+        if (content.classList.contains('open') && !content.dataset.rendered) {
+          renderSeatMap(b, index);
+          content.dataset.rendered = 'true';
+        }
+      };
+      
+      // Attach toggle functionality for meal
+      document.querySelector(`.toggle-header.toggle-meal[data-index="${index}"]`).onclick = () => {
+        const content = document.querySelector(`.meal-change-content[data-index="${index}"]`);
+        const icon = document.querySelector(`.toggle-meal-icon[data-index="${index}"]`);
+        
+        content.classList.toggle('open');
+        icon.classList.toggle('open');
+      };
+      
+      // Attach toggle functionality for meal options
+      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+        const header = document.querySelector(`.meal-toggle-header.${mealType}-toggle[data-index="${index}"]`);
+        const options = document.querySelector(`.${mealType}-options[data-index="${index}"]`);
+        const icon = document.querySelector(`.meal-toggle-icon.${mealType}-toggle-icon[data-index="${index}"]`);
+        
+        header.onclick = () => {
+          options.classList.toggle('open');
+          icon.classList.toggle('open');
+        };
+      });
+      
+      // Attach event listeners
+      setupEventListeners(b, index);
+    }
+
+    function setupEventListeners(booking, index) {
+      // Cancel button
+      document.querySelector(`.btn-cancel[data-index="${index}"]`).onclick = () => {
+        if (!confirm('Cancel this booking?')) return;
+        const bookings = getUserBookings();
+        bookings.splice(index, 1);
+        saveUserBookings(bookings);
+        document.getElementById(`booking_${index}`).remove();
+        if (bookings.length === 0) {
+          document.getElementById('out').innerHTML = '<div class="card">No bookings found. <a href="book flight.html">Book a flight</a></div>';
+        }
+      };
+
+      // Download button
+      document.querySelector(`.btn-download[data-index="${index}"]`).onclick = () => {
+        const mealDetails = booking.meals ? `
+Meals:
+  Breakfast: ${booking.meals.breakfast.food !== 'none' ? booking.meals.breakfast.food : ''}${booking.meals.breakfast.drink !== 'none' ? ', ' + booking.meals.breakfast.drink : ''}
+  Lunch: ${booking.meals.lunch.food !== 'none' ? booking.meals.lunch.food : ''}${booking.meals.lunch.drink !== 'none' ? ', ' + booking.meals.lunch.drink : ''}
+  Dinner: ${booking.meals.dinner.food !== 'none' ? booking.meals.dinner.food : ''}${booking.meals.dinner.drink !== 'none' ? ', ' + booking.meals.dinner.drink : ''}
+Meal Total: $${booking.meals.total}` : '';
+        const blob = new Blob([`FlyDreamAir Itinerary
+PNR: ${booking.pnr}
+Name: ${booking.passenger.firstName} ${booking.passenger.lastName}
+Email: ${booking.passenger.email}
+Flight: ${booking.flight_number} (${booking.origin} -> ${booking.destination})
+Date: ${booking.departure_date}
+Seat: ${booking.seat}
+Price: $${booking.price}${mealDetails}
+Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {type: 'text/plain'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `FlyDreamAir_${booking.pnr}.txt`;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      };
+
+      // Save seat button
+      let selectedSeat = null;
+      document.querySelector(`.btn-save-seat[data-index="${index}"]`).onclick = () => {
+        if (!selectedSeat) {
+          alert('Select a seat');
+          return;
+        }
+        const bookings = getUserBookings();
+        bookings[index].seat = selectedSeat;
+        saveUserBookings(bookings);
+        document.querySelector(`.seat-now[data-index="${index}"]`).textContent = selectedSeat;
+        document.querySelector(`.seat-new[data-index="${index}"]`).textContent = '-';
+        selectedSeat = null;
+        renderSeatMap(bookings[index], index);
+      };
+
+      // In-Flight Meals button
+      document.querySelector(`.btn-inflight[data-index="${index}"]`).onclick = () => {
+        const content = document.querySelector(`.meal-change-content[data-index="${index}"]`);
+        const icon = document.querySelector(`.toggle-meal-icon[data-index="${index}"]`);
+        content.classList.toggle('open');
+        icon.classList.toggle('open');
+      };
+
+      // Meal total calculation
+      const mealPrices = {
+        breakfast: {
+          food: { none: 0, pancakes: 13, waffles: 15 },
+          drink: { none: 0, apple_juice: 5, orange_juice: 5 }
+        },
+        lunch: {
+          food: { none: 0, hamburger: 10, salad: 8 },
+          drink: { none: 0, coke: 5, fanta: 5 }
+        },
+        dinner: {
+          food: { none: 0, steak: 20, pasta: 15 },
+          drink: { none: 0, wine: 12, pink_lemonade: 5 }
+        }
+      };
+
+      function updateMealTotal() {
+        let total = 0;
+        ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+          const foodInput = document.querySelector(`input[name="${mealType}_food_${index}"]:checked`);
+          const drinkInput = document.querySelector(`input[name="${mealType}_drink_${index}"]:checked`);
+          if (foodInput) {
+            total += mealPrices[mealType].food[foodInput.value] || 0;
+          }
+          if (drinkInput) {
+            total += mealPrices[mealType].drink[drinkInput.value] || 0;
+          }
+        });
+        document.querySelector(`.meal-total[data-index="${index}"]`).textContent = `$${total}`;
+      }
+
+      // Save meal button
+      document.querySelector(`.btn-save-meal[data-index="${index}"]`).onclick = () => {
+        const bookings = getUserBookings();
+        const newMealTotal = parseInt(document.querySelector(`.meal-total[data-index="${index}"]`).textContent.slice(1));
+        bookings[index].meals = {
+          breakfast: {
+            food: document.querySelector(`input[name="breakfast_food_${index}"]:checked`).value,
+            drink: document.querySelector(`input[name="breakfast_drink_${index}"]:checked`).value
+          },
+          lunch: {
+            food: document.querySelector(`input[name="lunch_food_${index}"]:checked`).value,
+            drink: document.querySelector(`input[name="lunch_drink_${index}"]:checked`).value
+          },
+          dinner: {
+            food: document.querySelector(`input[name="dinner_food_${index}"]:checked`).value,
+            drink: document.querySelector(`input[name="dinner_drink_${index}"]:checked`).value
+          },
+          total: newMealTotal
+        };
+        saveUserBookings(bookings);
+        // Update the meal total and total price in the table
+        document.querySelector(`#booking_${index} table tr:nth-child(6) td`).textContent = `$${newMealTotal}`;
+        document.querySelector(`#booking_${index} table tr:nth-child(7) td`).textContent = `$${bookings[index].price + newMealTotal}`;
+      };
+
+      // Attach change event listeners to all meal radio buttons
+      ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
+        const foodInputs = document.querySelectorAll(`input[name="${mealType}_food_${index}"]`);
+        const drinkInputs = document.querySelectorAll(`input[name="${mealType}_drink_${index}"]`);
+        foodInputs.forEach(input => input.addEventListener('change', updateMealTotal));
+        drinkInputs.forEach(input => input.addEventListener('change', updateMealTotal));
+      });
+
+      // Initial total calculation
+      updateMealTotal();
+    }
+
+    function seededRandom(seed) {
+      let h = 0;
+      for (let i = 0; i < seed.length; i++) {
+        h = (h << 5) - h + seed.charCodeAt(i);
+        h |= 0;
+      }
+      return function() {
+        h ^= h << 13;
+        h ^= h >>> 17;
+        h ^= h << 5;
+        return ((h >>> 0) % 1000) / 1000;
+      };
+    }
+
+    function renderSeatMap(booking, index) {
+      const rng = seededRandom(booking.flight_number + booking.departure_date);
+      const rows = 18, cols = ['A', 'B', 'C', 'D', 'E', 'F'], taken = new Set();
+      
+      // Generate random taken seats
+      for (let r = 1; r <= rows; r++) {
+        for (const c of cols) {
+          if (rng() < 0.2) taken.add(`${r}${c}`);
+        }
+      }
+      
+      // Add all user's bookings for this flight
+      const allBookings = getUserBookings();
+      for (const b of allBookings) {
+        if (b.flight_number === booking.flight_number && b.departure_date === booking.departure_date) {
+          taken.add(b.seat);
+        }
+      }
+      
+      // Remove current booking's seat so it can be reselected
+      taken.delete(booking.seat);
+      
+      const grid = document.createElement('div');
+      grid.className = 'grid';
+      grid.appendChild(document.createElement('span'));
+      
+      // Column headers
+      for (const c of cols) {
+        const d = document.createElement('div');
+        d.className = 'label';
+        d.textContent = c;
+        grid.appendChild(d);
+      }
+      
+      // Seats
+      for (let r = 1; r <= rows; r++) {
+        const rl = document.createElement('div');
+        rl.className = 'label';
+        rl.textContent = r;
+        grid.appendChild(rl);
+        
+        for (const c of cols) {
+          const code = `${r}${c}`;
+          const cell = document.createElement('div');
+          cell.className = 'seat';
+          cell.textContent = c;
+          cell.title = code;
+          
+          if (taken.has(code)) cell.classList.add('taken');
+          if (code === booking.seat) cell.classList.add('selected');
+          
+          cell.onclick = () => {
+            if (cell.classList.contains('taken')) return;
+            grid.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
+            cell.classList.add('selected');
+            
+            // Update selected seat for this specific booking
+            const saveBtn = document.querySelector(`.btn-save-seat[data-index="${index}"]`);
+            let selectedSeat = code;
+            
+            saveBtn.onclick = () => {
+              const bookings = getUserBookings();
+              bookings[index].seat = selectedSeat;
+              saveUserBookings(bookings);
+              document.querySelector(`.seat-now[data-index="${index}"]`).textContent = selectedSeat;
+              document.querySelector(`.seat-new[data-index="${index}"]`).textContent = '-';
+              renderSeatMap(bookings[index], index);
+            };
+            
+            document.querySelector(`.seat-new[data-index="${index}"]`).textContent = code;
+          };
+          
+          grid.appendChild(cell);
+        }
+      }
+            
+      const hold = document.querySelector(`.seat-wrap[data-index="${index}"]`);
+      hold.innerHTML = '';
+      hold.appendChild(grid);
+    }
+    
+    function showLogin() {
+      createLoginForm();
+      document.getElementById('overlay').classList.remove('popup_hidden');
+    }
+
+    function updateLoginBtn() {
+      const btn = document.getElementById('loginBtn');
+      const u = localStorage.current_user;
+      if (u) {
+        const dict = JSON.parse(localStorage.user_dict || '{}');
+        if (dict[u].username) {
+          btn.textContent = dict[u].username;
+        } else {
+          btn.textContent = 'User';
+        }
+        btn.onclick = () => {
+          if (confirm('Log out?')) {
+            localStorage.removeItem('current_user');
+            localStorage.logged_in = 'false';
+            updateLoginBtn();
+          }
+        };
+      } else {
+        btn.textContent = 'Login / Sign Up';
+        btn.onclick = showLogin;
+      }
+    }
+
+    window.addEventListener('userLoggedIn', updateLoginBtn);
   </script>
+  <script type="text/javascript" src="main.js"></script>
 </body>
 </html>
