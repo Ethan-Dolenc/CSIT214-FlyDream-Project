@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,7 +15,8 @@
     .row{display:grid;grid-template-columns:repeat(12,1fr);gap:10px}
     .input,select,button{width:100%;padding:10px;border:1px solid #e5e5e5;border-radius:8px;background:#fff}
     .input:hover,select:hover,button:hover{background:#f9f9f9;}
-    .btn{cursor:pointer}.btn.primary{background:#000;color:#fff}
+    .btn{cursor:pointer;background:#fff;color:#000}
+    .btn.primary{background:#000;color:#fff}
     .muted{color:#666;font-size:14px}
     .kbd{font-family:ui-monospace,Menlo,monospace;background:#f2f2f2;border:1px solid #e5e5e5;padding:2px 6px;border-radius:6px}
     table{width:100%;border-collapse:collapse;margin-top:10px}
@@ -34,40 +36,30 @@
     .seat-change-content.open{display:block}
     .meal-change-content{display:none;margin-top:10px}
     .meal-change-content.open{display:block}
-    .breakfast-options, .lunch-options, .dinner-options {
-      display: none;
-    }
-    .breakfast-options:hover, .lunch-options:hover, .dinner-options:hover {
-      display: none;
-    }
-    .breakfast-options.open, .lunch-options.open, .dinner-options.open {
-      display: block;
-    }
-    .meal-toggle-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      cursor: pointer;
-      user-select: none;
-      padding: 8px 0;
-    }
-    .meal-toggle-icon {
-      transition: transform 0.3s;
-      font-weight: bold;
-    }
-    .meal-toggle-icon.open {
-      transform: rotate(180deg);
-    }
+    .breakfast-options, .lunch-options, .dinner-options { display: none; }
+    .breakfast-options:hover, .lunch-options:hover, .dinner-options:hover { display: none; }
+    .breakfast-options.open, .lunch-options.open, .dinner-options.open { display: block; }
+    .meal-toggle-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; padding: 8px 0; }
+    .meal-toggle-icon { transition: transform 0.3s; font-weight: bold; }
+    .meal-toggle-icon.open { transform: rotate(180deg); }
     @media(max-width:720px){.row{grid-template-columns:1fr}}
   </style>
   <link rel="stylesheet" href="main.css">
 </head>
 <body>
-  <nav>
-    <a href="book flight.html" class="nav_button">Flights</a>
-    <a href="manage.html" class="nav_button">Manage</a>
-    <button id="loginBtn" class="nav_button" style="color:white;margin-right:15px;text-decoration:none" onclick="showLogin()">Login / Sign Up</button>
-  </nav>
+<nav class="topnav">
+  <div class="nav-inner">
+    <div class="nav-left">
+      <a href="book flight.html" class="brand">FlyDreamAir</a>
+      <a href="book flight.html" class="nav_link">Flights</a>
+      <a href="manage.html" class="nav_link">Manage</a>
+    </div>
+    <div class="nav-right">
+      <button id="loginBtn" class="btn small ghost" onclick="showLogin()">Login / Sign Up</button>
+    </div>
+  </div>
+</nav>
+
 
   <div class="wrap">
     <div class="card">
@@ -77,7 +69,6 @@
   </div>
 
   <script>
-    // Get current user's bookings
     function getUserBookings() {
       const current_user = localStorage.getItem('current_user');
       if (!current_user) {
@@ -92,7 +83,6 @@
       return user_dict[current_user].booked_flights || [];
     }
 
-    // Save booking changes back to user
     function saveUserBookings(bookings) {
       const current_user = localStorage.getItem('current_user');
       const user_dict = JSON.parse(localStorage.getItem('user_dict') || '{}');
@@ -103,7 +93,6 @@
       }
     }
 
-    // Load all bookings on page load
     window.onload = function() {
       const bookings = getUserBookings();
       const out = document.getElementById('out');
@@ -113,8 +102,21 @@
         out.innerHTML = '<div class="card">No bookings found. <a href="book flight.html">Book a flight</a></div>';
         return;
       }
-      
-      // Display all bookings
+  function calcMealTotalFromSelections(meals) {
+    if (!meals) return 0;
+    const prices = {
+      breakfast: { food: {none:0,pancakes:13,waffles:15}, drink: {none:0,apple_juice:5,orange_juice:5} },
+      lunch:     { food: {none:0,hamburger:10,salad:8},   drink: {none:0,coke:5,fanta:5} },
+      dinner:    { food: {none:0,steak:20,pasta:15},      drink: {none:0,wine:12,pink_lemonade:5} }
+    };
+    let total = 0;
+    ['breakfast','lunch','dinner'].forEach(m => {
+      const f = meals[m]?.food  || 'none';
+      const d = meals[m]?.drink || 'none';
+      total += (prices[m].food[f]  || 0) + (prices[m].drink[d] || 0);
+    });
+    return total;
+  }
       bookings.forEach((booking, index) => {
         renderBooking(booking, index);
       });
@@ -126,10 +128,21 @@
       cardDiv.className = 'card';
       cardDiv.id = `booking_${index}`;
       
-      // Compute meal total and total price for display
-      const mealTotal = b.meals ? b.meals.total : 0;
+
+const mealTotal = (b.meals && typeof b.meals.total === 'number')
+  ? b.meals.total
+  : calcMealTotalFromSelections(b.meals);
+
       const totalPrice = b.price + mealTotal;
-      
+      try {
+  if (b.meals && typeof b.meals.total !== 'number') {
+    const bookings = getUserBookings();
+    if (bookings[index]) {
+      bookings[index].meals.total = mealTotal;
+      saveUserBookings(bookings);
+    }
+  }
+} catch (e) {}
       cardDiv.innerHTML = `
         <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">
           <div>
@@ -223,7 +236,6 @@
       
       out.appendChild(cardDiv);
       
-      // Attach toggle functionality for seat
       document.querySelector(`.toggle-header.toggle-seat[data-index="${index}"]`).onclick = () => {
         const content = document.querySelector(`.seat-change-content[data-index="${index}"]`);
         const icon = document.querySelector(`.toggle-seat-icon[data-index="${index}"]`);
@@ -231,14 +243,12 @@
         content.classList.toggle('open');
         icon.classList.toggle('open');
         
-        // Render seat map on first open
         if (content.classList.contains('open') && !content.dataset.rendered) {
           renderSeatMap(b, index);
           content.dataset.rendered = 'true';
         }
       };
       
-      // Attach toggle functionality for meal
       document.querySelector(`.toggle-header.toggle-meal[data-index="${index}"]`).onclick = () => {
         const content = document.querySelector(`.meal-change-content[data-index="${index}"]`);
         const icon = document.querySelector(`.toggle-meal-icon[data-index="${index}"]`);
@@ -247,7 +257,6 @@
         icon.classList.toggle('open');
       };
       
-      // Attach toggle functionality for meal options
       ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
         const header = document.querySelector(`.meal-toggle-header.${mealType}-toggle[data-index="${index}"]`);
         const options = document.querySelector(`.${mealType}-options[data-index="${index}"]`);
@@ -259,12 +268,10 @@
         };
       });
       
-      // Attach event listeners
       setupEventListeners(b, index);
     }
 
     function setupEventListeners(booking, index) {
-      // Cancel button
       document.querySelector(`.btn-cancel[data-index="${index}"]`).onclick = () => {
         if (!confirm('Cancel this booking?')) return;
         const bookings = getUserBookings();
@@ -276,7 +283,6 @@
         }
       };
 
-      // Download button
       document.querySelector(`.btn-download[data-index="${index}"]`).onclick = () => {
         const mealDetails = booking.meals ? `
 Meals:
@@ -300,7 +306,6 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
       };
 
-      // Save seat button
       let selectedSeat = null;
       document.querySelector(`.btn-save-seat[data-index="${index}"]`).onclick = () => {
         if (!selectedSeat) {
@@ -316,7 +321,6 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
         renderSeatMap(bookings[index], index);
       };
 
-      // In-Flight Meals button
       document.querySelector(`.btn-inflight[data-index="${index}"]`).onclick = () => {
         const content = document.querySelector(`.meal-change-content[data-index="${index}"]`);
         const icon = document.querySelector(`.toggle-meal-icon[data-index="${index}"]`);
@@ -324,7 +328,6 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
         icon.classList.toggle('open');
       };
 
-      // Meal total calculation
       const mealPrices = {
         breakfast: {
           food: { none: 0, pancakes: 13, waffles: 15 },
@@ -355,7 +358,6 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
         document.querySelector(`.meal-total[data-index="${index}"]`).textContent = `$${total}`;
       }
 
-      // Save meal button
       document.querySelector(`.btn-save-meal[data-index="${index}"]`).onclick = () => {
         const bookings = getUserBookings();
         const newMealTotal = parseInt(document.querySelector(`.meal-total[data-index="${index}"]`).textContent.slice(1));
@@ -375,12 +377,10 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
           total: newMealTotal
         };
         saveUserBookings(bookings);
-        // Update the meal total and total price in the table
         document.querySelector(`#booking_${index} table tr:nth-child(6) td`).textContent = `$${newMealTotal}`;
         document.querySelector(`#booking_${index} table tr:nth-child(7) td`).textContent = `$${bookings[index].price + newMealTotal}`;
       };
 
-      // Attach change event listeners to all meal radio buttons
       ['breakfast', 'lunch', 'dinner'].forEach(mealType => {
         const foodInputs = document.querySelectorAll(`input[name="${mealType}_food_${index}"]`);
         const drinkInputs = document.querySelectorAll(`input[name="${mealType}_drink_${index}"]`);
@@ -388,7 +388,6 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
         drinkInputs.forEach(input => input.addEventListener('change', updateMealTotal));
       });
 
-      // Initial total calculation
       updateMealTotal();
     }
 
@@ -410,14 +409,12 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
       const rng = seededRandom(booking.flight_number + booking.departure_date);
       const rows = 18, cols = ['A', 'B', 'C', 'D', 'E', 'F'], taken = new Set();
       
-      // Generate random taken seats
       for (let r = 1; r <= rows; r++) {
         for (const c of cols) {
           if (rng() < 0.2) taken.add(`${r}${c}`);
         }
       }
       
-      // Add all user's bookings for this flight
       const allBookings = getUserBookings();
       for (const b of allBookings) {
         if (b.flight_number === booking.flight_number && b.departure_date === booking.departure_date) {
@@ -425,14 +422,12 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
         }
       }
       
-      // Remove current booking's seat so it can be reselected
       taken.delete(booking.seat);
       
       const grid = document.createElement('div');
       grid.className = 'grid';
       grid.appendChild(document.createElement('span'));
       
-      // Column headers
       for (const c of cols) {
         const d = document.createElement('div');
         d.className = 'label';
@@ -440,7 +435,6 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
         grid.appendChild(d);
       }
       
-      // Seats
       for (let r = 1; r <= rows; r++) {
         const rl = document.createElement('div');
         rl.className = 'label';
@@ -462,7 +456,6 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
             grid.querySelectorAll('.seat.selected').forEach(s => s.classList.remove('selected'));
             cell.classList.add('selected');
             
-            // Update selected seat for this specific booking
             const saveBtn = document.querySelector(`.btn-save-seat[data-index="${index}"]`);
             let selectedSeat = code;
             
@@ -489,7 +482,8 @@ Total Price: $${booking.price + (booking.meals ? booking.meals.total : 0)}`], {t
     
     function showLogin() {
       createLoginForm();
-      document.getElementById('overlay').classList.remove('popup_hidden');
+      const ov = document.getElementById('overlay');
+      if (ov) ov.classList.remove('popup_hidden');
     }
 
     function updateLoginBtn() {
