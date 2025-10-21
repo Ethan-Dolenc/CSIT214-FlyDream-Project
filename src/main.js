@@ -1,9 +1,8 @@
-//////////////////////////////////////GENERAL FUNCTIONS//////////////////////////////////////
+// main.js
 var displayed_popups = [];
 
 function displayPopup(popup_id) {
     var popup = document.getElementById(popup_id);
-    
     if (displayed_popups.includes(popup_id)) {
         popup.classList.add("popup_hidden");
         displayed_popups = displayed_popups.filter(item => item !== popup_id);
@@ -17,7 +16,6 @@ function resetForm(form_id) {
     const form = document.getElementById(form_id);
     const elements = form.querySelectorAll('*');
     form.reset();
-    
     for (const element of elements) {
         if (displayed_popups.includes(element.id)) {
             displayPopup(element.id);
@@ -25,7 +23,6 @@ function resetForm(form_id) {
     }
 }
 
-//////////////////////////////////////INFLIGHT MEAL MANAGEMENT//////////////////////////////////////
 const price_dict = {
     "none": 0,
     "pancakes": 13,
@@ -51,7 +48,6 @@ var selected_prices = {
 };
 var total_price=0.00;
 
-//Calculate price of selected items
 function getPrice(radio_group) {
     var radio_buttons = document.querySelectorAll(`input[name="${radio_group}"]`);
     var selected_value;
@@ -65,14 +61,12 @@ function getPrice(radio_group) {
     selected_prices[radio_group] = price_dict[selected_value];
     total_price += selected_prices[radio_group];
 
-    //update the meal form to display the current total price
     meal_form = document.getElementById('meal_form');
     if (meal_form && !meal_form.classList.contains('popup_hidden')) {
         var price_display = document.getElementById("price_display");
         price_display.innerHTML = `Total Price: $${total_price}.00`;
     }
 }
-
 
 function submitMealForm(event) {
     event.preventDefault();
@@ -84,7 +78,6 @@ function submitMealForm(event) {
     }
 }
 
-//////////////////////////////////////LOGIN MANAGEMENT//////////////////////////////////////
 var user_error=false;
 var pass_error = false;
 var username = "";
@@ -113,15 +106,21 @@ function createLoginForm() {
         <p class="error popup_hidden muted" id="no_password"><i>Please enter a password</i></p>
       </div>
       <div style="grid-column:span 12;display:flex;gap:8px;justify-content:flex-end">
-        <button type="button" class="btn" onclick="displayPopup('screen_lock_overlay');document.getElementById('login_form').remove();">Cancel</button>
+        <button type="button" class="btn" id="login_cancel_btn">Cancel</button>
         <button type="submit" class="btn primary">Login</button>
       </div>
     </div>
     `;
     document.body.appendChild(login_form);
+    var cancelBtn = document.getElementById('login_cancel_btn');
+    cancelBtn.onclick = function(){
+      var f = document.getElementById('login_form');
+      if (f) f.remove();
+      var ov = document.getElementById('overlay');
+      if (ov) ov.classList.add('popup_hidden');
+    };
 }
 
-//Login Form Submission
 function submitLoginForm(event) {
     event.preventDefault();
     const login_form = document.getElementById('login_form');
@@ -152,25 +151,25 @@ function submitLoginForm(event) {
                 'booked_flights': []
             };
             localStorage.setItem('user_dict', JSON.stringify(user_dict));
+            localStorage.current_user = userKey;
+            localStorage.logged_in = 'true';
+            try { if (typeof updateLoginBtn === 'function') updateLoginBtn(); } catch(e) {}
+            try { window.dispatchEvent(new Event('userLoggedIn')); } catch(e) {}
         }
         
         localStorage.setItem('logged_in', 'true');
         localStorage.setItem('current_user', userKey);
         login_form.remove();
-        displayPopup("screen_lock_overlay");
-        
-        // Dispatch event to notify login
+        var ov = document.getElementById('overlay');
+        if (ov) ov.classList.add('popup_hidden');
         window.dispatchEvent(new Event('userLoggedIn'));
     }
 }
 
 function onLoad() {
-    // Initialize logged_in
     if (!localStorage.getItem('logged_in')) {
         localStorage.setItem('logged_in', 'false');
     }
-    
-    // Initialize user_dict
     if (!localStorage.getItem('user_dict')) {
         localStorage.setItem('user_dict', JSON.stringify({}));
     }
